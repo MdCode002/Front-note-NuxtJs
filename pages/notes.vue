@@ -10,5 +10,9 @@
 </template>
 
 <script setup>
-// Votre logique ici
+const authStore = useAuthStore()
+onMounted(() => {
+  authStore.fetchUser()
+})
+
 </script>

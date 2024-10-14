@@ -18,9 +18,26 @@
         @click="recherche = ''"
       />
     </div>
+    <div v-if="!postStore.isLoading" class="flex flex-col gap-2">
+      <div v-for="post in postStore.folderPosts" :key="post.id" class="flex w-full cursor-pointer rounded-lg p-2 flex-col gap-2 px-8" @click="activePost(post)" :class="{ 'bg-white dark:bg-[#525253]': post.id === postStore.activePost.id }" >
+          <p class="text-2xl font-bold">{{ post.title }}</p>
+          <div class="flex flex-row  items-center gap-2">
+            <p class="text-sm font-bold">{{ new Date(post.created_at).toLocaleDateString() }}</p>
+            <p class="text-sm">{{ post.content.length > 10 ? post.content.slice(0, 10) + '...' : post.content }}</p>
+          </div>
+
+      </div>
+
+    </div>
   </div>
 </template>
 
 <script setup>
 const recherche = ref('')
+const postStore = usePostStore()
+const router = useRouter()
+function activePost(post){
+  postStore.activePost = post
+}
+
 </script>

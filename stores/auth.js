@@ -2,7 +2,9 @@ import { defineStore } from 'pinia'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null,
+    name: "",
+    email: "", 
+    is_dark: null,
     token: null,
   }),
   actions: {
@@ -11,7 +13,8 @@ export const useAuthStore = defineStore('auth', {
      // Effectuer la requête de connexion à l'API
      const response = await $fetch(`${useRuntimeConfig().public.apiBase}/login`, {
        method: 'POST',
-       body: credentials
+       body: credentials,
+
      })
 
      // Afficher la réponse entière dans la console pour la vérifier
@@ -27,7 +30,7 @@ export const useAuthStore = defineStore('auth', {
 
      // Enregistrer le token et l'utilisateur
      this.token = data.access_token
-     localStorage.setItem('token', data.access_token)
+
      await this.fetchUser()
    } catch (error) {
      // Afficher les erreurs de connexion
@@ -40,16 +43,19 @@ export const useAuthStore = defineStore('auth', {
       try {
         // Effectuer une requête pour récupérer les informations de l'utilisateur
         const data = await $fetch(`${useRuntimeConfig().public.apiBase}/user`, {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${this.token}`
+            Authorization: `Bearer ${this.token}`,
+            Accept: 'application/json',
           }
         })
 
         // Afficher les données de l'utilisateur pour le débogage
-        console.log('User data:', data)
+        console.log('User data:', data.name)
 
         // Enregistrer les données de l'utilisateur dans l'état
-        this.user = data
+        this.name = data.name
+        this.email = data.email
       } catch (error) {
         // Afficher les erreurs lors de la récupération de l'utilisateur
         console.error('Fetch user error:', error)
@@ -63,5 +69,11 @@ export const useAuthStore = defineStore('auth', {
       this.token = null
       localStorage.removeItem('token')
     },
+    async darkmode(is_dark){
+      this.is_dark = is_dark
+}
   },
-})
+  persist: true,
+}
+
+)

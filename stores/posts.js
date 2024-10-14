@@ -2,31 +2,56 @@ import { useFetch } from '#app'
 import { defineStore } from 'pinia'
 export const usePostStore = defineStore('posts', {
   state: () => ({
-    posts: [],
+    posts: {},
+    folderPosts: {},
+    activePost: null,
+    isLoadingEditor: false
   }),
   actions: {
     async fetchPosts() {
       try {
-        const { data, error } = await useFetch('/api/posts')
-        if (error.value) throw new Error(error.value)
+        const authStore = useAuthStore()
+        this.isLoadingEditor = true
+        const data = await $fetch(`${useRuntimeConfig().public.apiBase}/posts`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${authStore.token}`,
+            Accept: 'application/json'
+          }
+        })
+
+        // Afficher les données de l'utilisateur pour le débogage
+        console.log('posts data fetch:', data)
+
+        // Enregistrer les données de l'utilisateur dans l'état
         
-        this.posts = data.value
+        this.posts = data
+        console.log('posts state:', this.posts)
+        this.isLoadingEditor = false
       } catch (error) {
         console.error('Fetch posts error:', error)
+        this.isLoadingEditor = false
         throw error
       }
     },
     async createPost(post) {
       try {
-        const { data, error } = await useFetch('/api/posts', {
+        const authStore = useAuthStore()
+        this.isLoadingEditor = true
+        const response = await $fetch(`${useRuntimeConfig().public.apiBase}/posts`, {
           method: 'POST',
-          body: post
+          body: post,
+          headers: {
+            Authorization: `Bearer ${authStore.token}`,
+           
+          }
         })
-        if (error.value) throw new Error(error.value)
-
-        this.posts.push(data.value)
+        console.log('post created:', response)
+        this.folderPosts.push(response)
+        this.posts.push(response)
+        this.isLoadingEditor = false
       } catch (error) {
-        console.error('Create post error:', error)
+        console.error('Create folder post :', error)
         throw error
       }
     },
@@ -47,18 +72,35 @@ export const usePostStore = defineStore('posts', {
         throw error
       }
     },
-    async deletePost(postId) {
+    async deletePost(postsId) {
       try {
-        const { error } = await useFetch(`/api/posts/${postId}`, {
-          method: 'DELETE'
+        const authStore = useAuthStore()
+        this.isLoadingEditor = true
+        const response =  await $fetch(`${useRuntimeConfig().public.apiBase}/posts/${postsId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${authStore.token}`,
+            Accept: 'application/json'
+          }
         })
-        if (error.value) throw new Error(error.value)
 
-        this.posts = this.posts.filter(p => p.id !== postId)
+        // Cette ligne filtre le tableau 'folders' pour supprimer le dossier avec l'ID spécifié
+        // Elle crée un nouveau tableau contenant tous les dossiers sauf celui qui correspond à l'ID supprimé
+        // Cela met à jour l'état local immédiatement après la suppression réussie sur le serveur
+        this.folderPosts = this.folderPosts.filter(post => post.id !== postsId)
+        this.posts = this.posts.filter(post => post.id !== postsId)
+        this.isLoadingEditor = false
       } catch (error) {
-        console.error('Delete post error:', error)
+        console.error('Destroy folder error:', error)
+        this.isLoadingEditor = false
         throw error
       }
     },
+    async fetchPostsByFolder(folderId) {
+      this.folderPosts = this.posts.filter(post => post.folder_id === folderId)
+    },
+    async activePost(postId){
+      this.activePost = this.posts.find(post => post.id === postId)
+    }
   },
 })
